@@ -9,7 +9,22 @@ from gov_data_class import gov_data
 key_path = '/home/edilson/Desktop/chave_api_gov'
 api_key = {'chave-api-dados': open(key_path, 'r').read().strip('\n')}
 
-#Test request
+#Instance class
 gov = gov_data()
 
-gov.get_data(request_type='orgaos-siafi')
+#Get the names and codes for all federal organs
+#gov.get_data(request_type='orgaos-siafi')
+#gov.get_data(request_type='orgaos-siape')
+
+params = {
+    'emission_date': '27/01/2022',
+    'fase': 1,
+    'managing_organ': '02002',
+    'page': 1
+}
+
+gov.get_data(
+    request_type='despesas',
+    request_subtype='documentos',
+    params=params
+)

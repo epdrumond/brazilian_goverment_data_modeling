@@ -16,6 +16,10 @@ class gov_data:
             url = self.request_type
             export_file_name = self.request_type
 
+        if self.request_type == 'plano-orcamentario':
+            url = f"despesas/plano-orcamentario?ano={params['year']}"
+            url += '&pagina={}'
+
         elif self.request_type == 'despesas':
             if self.request_subtype == 'documentos':
                 date_url = f"?dataEmissao={params['emission_date']}"
@@ -49,17 +53,50 @@ class gov_data:
                 )
 
 
-        return base_url + url, export_file_name
+        return base_url + url
+
+    def make_request(self, base_url, mode):
+        '''
+        Get the data from the API given the url and the read mode:
+        1. sample (queries data from a single page)
+        2. complete (loops over pages to get complete data)
+        '''
+        if mode == 'sample':
+            url = base_url.format(1)
+            data = requests.get(url, verify=True, headers=self.api_key).json()
+
+        elif mode == 'complete':
+            data = []
+            page = 1
+            end_flag = False
+
+            while not end_flag:
+                try:
+                    url = base_url.format(page)
+                    data += requests.get(
+                            url,
+                            verify=True,
+                            headers=self.api_key
+                        ).json()
+
+                    print(page)
+                    page += 1
+
+                except Exception as error:
+                    end_flag = True
+
+        return data
+
 
     def get_data(self, request_type, request_subtype=None, **params):
         self.request_type = request_type
         self.request_subtype = request_subtype
-        params = params['params']
 
         try:
-            url, export_file = self.get_url(params)
-            request_data = requests.get(url, verify=True, headers=self.api_key).json()
+            url = self.get_url(params)
+            request_data = self.make_request(url, params['mode'])
 
+            export_file = 'test.txt'
             self.export_data(request_data, export_file)
         except Exception as e:
             print(e)

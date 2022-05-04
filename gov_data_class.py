@@ -2,6 +2,7 @@ import requests
 import json
 import pandas as pd
 from os.path import join
+import time
 
 class gov_data:
 
@@ -13,8 +14,7 @@ class gov_data:
         base_url = 'http://api.portaldatransparencia.gov.br/api-de-dados/'
 
         if (self.request_type == 'orgaos-siafi') or (self.request_type == 'orgaos-siape'):
-            url = self.request_type
-            export_file_name = self.request_type
+            url = self.request_type + '?pagina{}'
 
         if self.request_type == 'plano-orcamentario':
             url = f"despesas/plano-orcamentario?ano={params['year']}"
@@ -76,27 +76,32 @@ class gov_data:
                     data += requests.get(
                             url,
                             verify=True,
-                            headers=self.api_key
+                            headers=self.api_key,
+                            timeout=20
                         ).json()
+                    time.sleep(0.5)
 
                     print(page)
                     page += 1
 
                 except Exception as error:
+                    print(error)
                     end_flag = True
 
         return data
 
 
-    def get_data(self, request_type, request_subtype=None, **params):
+    def get_data(self, request_type, request_subtype=None, export_file=None, **params):
         self.request_type = request_type
         self.request_subtype = request_subtype
 
         try:
             url = self.get_url(params)
-            request_data = self.make_request(url, params['mode'])
+            mode = params['mode'] if 'mode' in params.keys() else 'sample'
+            request_data = self.make_request(url, mode)
 
-            export_file = 'test.txt'
+            if not export_file:
+                export_file = request_type + '.txt'
             self.export_data(request_data, export_file)
         except Exception as e:
             print(e)
